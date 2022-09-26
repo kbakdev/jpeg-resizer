@@ -17,6 +17,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -39,25 +41,29 @@ type Resize struct {
 func (s *Resize) ProcessResizesAsync(request requests.Resize) ([]responses.Resize, error) {
 	results := make([]responses.Resize, 0, len(request.URLs))
 	for _, url := range request.URLs {
-
-		// generate a unique IDs for the images to be resized in go routines
 		id := genID(strconv.Itoa(int(request.Width)), strconv.Itoa(int(request.Width)), url)
-
+		result := responses.Resize{}
 		key := "/v1/image/" + id + ".jpeg"
+
+		newURL := PROTO + HOSTPORT + key
+
+		if strings.HasSuffix(url, ".jpeg") {
+			result.Result = SUCCESS
+			result.URL = newURL
+		} else {
+			result.Result = FAILURE
+		}
+		// generate a unique IDs for the images to be resized in go routines
 
 		// check if KEY already exist in the cache
 		if s.Cache.Contains(key) {
 			result := responses.Resize{}
-			newURL := PROTO + HOSTPORT + key
-			result.URL = newURL
 			result.Result = SUCCESS
+			result.URL = newURL
 			result.Cached = true
 			results = append(results, result)
 			continue
 		}
-
-		newURL := PROTO + HOSTPORT + key
-
 		// if the image is not in the cache, resize the image in a go routine
 		go func(url string, id string, key string, newURL string) {
 			data, err := fetchAndResize(url, request.Width, request.Height)
@@ -70,9 +76,6 @@ func (s *Resize) ProcessResizesAsync(request requests.Resize) ([]responses.Resiz
 		}(url, id, key, newURL)
 
 		// return the new URL for the resized image
-		result := responses.Resize{}
-		result.URL = newURL
-		result.Result = SUCCESS
 		result.Cached = false
 		results = append(results, result)
 	}
@@ -82,11 +85,20 @@ func (s *Resize) ProcessResizesAsync(request requests.Resize) ([]responses.Resiz
 func (s *Resize) ProcessResizes(request requests.Resize) ([]responses.Resize, error) {
 	results := make([]responses.Resize, 0, len(request.URLs))
 	for _, url := range request.URLs {
-		result := responses.Resize{}
-		// request.Width and request.Height are uint, so we need to convert them to string
-		id := genID(strconv.Itoa(int(request.Width)), strconv.Itoa(int(request.Width)), url)
 
+		id := genID(strconv.Itoa(int(request.Width)), strconv.Itoa(int(request.Width)), url)
+		result := responses.Resize{}
 		key := "/v1/image/" + id + ".jpeg"
+
+		newURL := PROTO + HOSTPORT + key
+
+		if strings.HasSuffix(url, ".jpeg") {
+			result.Result = SUCCESS
+			result.URL = newURL
+		} else {
+			result.Result = FAILURE
+		}
+		result.Result = SUCCESS
 
 		// check if KEY already exist in the cache
 		if s.Cache.Contains(key) {
@@ -98,8 +110,6 @@ func (s *Resize) ProcessResizes(request requests.Resize) ([]responses.Resize, er
 			results = append(results, result)
 			continue
 		}
-
-		newURL := PROTO + HOSTPORT + key
 
 		data, err := fetchAndResize(url, request.Width, request.Height)
 		if err != nil {
@@ -113,7 +123,6 @@ func (s *Resize) ProcessResizes(request requests.Resize) ([]responses.Resize, er
 		s.Cache.Add(key, data)
 
 		result.URL = newURL
-		result.Result = SUCCESS
 		result.Cached = false
 		results = append(results, result)
 	}
@@ -132,7 +141,10 @@ func fetchAndResize(url string, width uint, height uint) ([]byte, error) {
 
 func fetch(url string) ([]byte, error) {
 	log.Print("fetching ", url)
-	r, err := http.Get(url)
+
+	client := http.Client{Timeout: 1 * time.Second}
+
+	r, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %v", err)
 	}
@@ -140,6 +152,11 @@ func fetch(url string) ([]byte, error) {
 
 	if r.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("non-200 status: %d", r.StatusCode)
+	}
+
+	// if content-type is not image/jpeg, return error
+	if r.Header.Get("Content-Type") != "image/jpeg" {
+		return nil, fmt.Errorf("content-type is not image/jpeg")
 	}
 
 	data, err := ioutil.ReadAll(io.LimitReader(r.Body, 15*1024*1024))
