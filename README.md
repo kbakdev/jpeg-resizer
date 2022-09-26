@@ -1,5 +1,3 @@
-# Field Materials Backend Interview skeleton code
-
 ## Build & Run Server locally
 ```
 go run .
