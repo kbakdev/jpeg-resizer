@@ -1,7 +1,8 @@
 package responses
 
 type Resize struct {
-	Result string `json:"result"`
-	URL    string `json:"url,omitempty"`
-	Cached bool   `json:"cached"`
+	Result     string `json:"result"`
+	URL        string `json:"url,omitempty"`
+	Cached     bool   `json:"cached"`
+	Processing bool   `json:"processing"`
 }

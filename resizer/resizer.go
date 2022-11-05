@@ -47,6 +47,8 @@ func (s *Resize) ProcessResizesAsync(request requests.Resize) ([]responses.Resiz
 
 		newURL := PROTO + HOSTPORT + key
 
+		result.Processing = true
+
 		if strings.HasSuffix(url, ".jpeg") {
 			result.Result = SUCCESS
 			result.URL = newURL
