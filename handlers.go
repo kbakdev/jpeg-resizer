@@ -3,9 +3,9 @@ package main
 import (
 	"container/list"
 	"encoding/json"
-	"github.com/53jk1/Server-Coding/requests"
-	"github.com/53jk1/Server-Coding/resizer"
-	"github.com/53jk1/Server-Coding/responses"
+	"github.com/53jk1/jpeg-resizer/requests"
+	"github.com/53jk1/jpeg-resizer/resizer"
+	"github.com/53jk1/jpeg-resizer/responses"
 	"io"
 	"log"
 	"net/http"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/53jk1/Server-Coding/resizer"
+	"github.com/53jk1/jpeg-resizer/resizer"
 	lru "github.com/hashicorp/golang-lru"
 	"log"
 	"net/http"
