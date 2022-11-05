@@ -7,7 +7,7 @@ go run .
 ```
 curl -X POST -H "Content-Type: application/json" -d @req.json http://localhost:8080/v1/resize
 ```
-## Run asynchrnous request against the server
+## Run asynchronous request against the server
 ```
 curl -X POST -H "Content-Type: application/json" -d @req.json http://localhost:8080/v1/resize?async=true
 ```
